@@ -21,65 +21,56 @@ package org.everit.osgi.bouncycastle.adapter;
  * MA 02110-1301  USA
  */
 
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.Provider;
 import java.util.Hashtable;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.everit.osgi.service.javasecurity.JavaSecurityFactory;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
 /**
- * Registers a {@link JavaSecurityFactory} for Bouncy Castle security provider.
+ * Registers a {@link Provider} OSGi service based on the Bouncy Castle security provider.
  */
 public class Activator implements BundleActivator {
 
     /**
-     * The Bouncy Castle specific {@link JavaSecurityFactory}.
+     * Service property name. The class of the created provide by the {@link #createProvider()} method.
      */
-    private static class BouncyCastleFactory implements JavaSecurityFactory {
+    private static final String PROVIDER_CLASS = "providerClass";
 
-        @Override
-        public KeyStore createKeyStore(final String type, final Provider provider) {
-            try {
-                return KeyStore.getInstance(type, provider);
-            } catch (KeyStoreException e) {
-                throw new IllegalStateException("failed to create keystore with type [" + type + "] and provider ["
-                        + provider.getName() + "]", e);
-            }
-        }
+    /**
+     * Service property name. The name of the created provide by the {@link #createProvider()} method. The service
+     * property value must be the return value of {@link Provider#getName()}.
+     */
+    private static final String PROVIDER_NAME = "providerName";
 
-        @Override
-        public Provider createProvider() {
-            return new BouncyCastleProvider();
-        }
-
-    }
+    /**
+     * Service property name. The version of the created provide by the {@link #createProvider()} method. The service
+     * property value must be the return value of {@link Provider#getVersion()}.
+     */
+    private static final String PROVIDER_VERSION = "providerVersion";
 
     /**
      * The {@link ServiceRegistration} created by the activator.
      */
-    private ServiceRegistration<JavaSecurityFactory> javaSecurityFactorySR;
+    private ServiceRegistration<Provider> providerSR;
 
     @Override
     public void start(final BundleContext context) throws Exception {
-        JavaSecurityFactory javaSecurityFactory = new BouncyCastleFactory();
+        Provider provider = new BouncyCastleProvider();
         Hashtable<String, Object> props = new Hashtable<String, Object>();
-        Provider provider = javaSecurityFactory.createProvider();
-        props.put(JavaSecurityFactory.PROVIDER_CLASS, provider.getClass().getName());
-        props.put(JavaSecurityFactory.PROVIDER_NAME, provider.getName());
-        props.put(JavaSecurityFactory.PROVIDER_VERSION, Double.valueOf(provider.getVersion()));
-        javaSecurityFactorySR = context.registerService(JavaSecurityFactory.class, javaSecurityFactory, props);
+        props.put(PROVIDER_CLASS, provider.getClass().getName());
+        props.put(PROVIDER_NAME, provider.getName());
+        props.put(PROVIDER_VERSION, Double.valueOf(provider.getVersion()));
+        providerSR = context.registerService(Provider.class, provider, props);
     }
 
     @Override
     public void stop(final BundleContext context) throws Exception {
-        if (javaSecurityFactorySR != null) {
-            javaSecurityFactorySR.unregister();
-            javaSecurityFactorySR = null;
+        if (providerSR != null) {
+            providerSR.unregister();
+            providerSR = null;
         }
     }
 
