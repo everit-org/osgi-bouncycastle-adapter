@@ -22,6 +22,7 @@ package org.everit.osgi.bouncycastle.adapter;
  */
 
 import java.security.Provider;
+import java.security.Security;
 import java.util.Hashtable;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -56,14 +57,18 @@ public class Activator implements BundleActivator {
      */
     private ServiceRegistration<Provider> providerSR;
 
+    private String providerName;
+
     @Override
     public void start(final BundleContext context) throws Exception {
         Provider provider = new BouncyCastleProvider();
         Hashtable<String, Object> props = new Hashtable<String, Object>();
         props.put(PROVIDER_CLASS, provider.getClass().getName());
-        props.put(PROVIDER_NAME, provider.getName());
+        providerName = provider.getName();
+        props.put(PROVIDER_NAME, providerName);
         props.put(PROVIDER_VERSION, Double.valueOf(provider.getVersion()));
         providerSR = context.registerService(Provider.class, provider, props);
+        Security.addProvider(provider);
     }
 
     @Override
@@ -71,6 +76,7 @@ public class Activator implements BundleActivator {
         if (providerSR != null) {
             providerSR.unregister();
             providerSR = null;
+            Security.removeProvider(providerName);
         }
     }
 
