@@ -57,6 +57,9 @@ public class Activator implements BundleActivator {
      */
     private ServiceRegistration<Provider> providerSR;
 
+    /**
+     * The name of the registered provider to unregister when this bundle is stopped.
+     */
     private String providerName;
 
     @Override
